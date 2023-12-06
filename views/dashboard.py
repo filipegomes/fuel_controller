@@ -27,7 +27,7 @@ class Dashboard(UserControl):
 
         # --------> VARIABLES *INITIAL CARDS* ROW <---------#
         initial_cards_row = ft.ResponsiveRow()
-        budget_value = 76600 #put that on settings
+        budget_value = 76600  # put that on settings
         fuel_total_text = ft.Text()
         irregular_text = ft.Text()
         budget_text = ft.Text(number_formatter(format(budget_value, '.2f')))
@@ -61,6 +61,9 @@ class Dashboard(UserControl):
                 final_date_field,
             ],
         )
+        # --------> VARIABLES *TABLE* CONTAINER <---------#
+        table_data_input = ft.DataTable()
+        data_fuel_df = pd.DataFrame()
 
         # ---------> FUNCTIONS:
 
@@ -143,7 +146,6 @@ class Dashboard(UserControl):
             """
 
             if e.files is not None:
-
                 # # -------> LOADING ANIMATION
                 animation_loading(self.page, send_file_button, 1)
                 # # <--------- LOADING ANIMATION
@@ -151,8 +153,10 @@ class Dashboard(UserControl):
                 self.page.session.set("uploaded_file", str(e.files[0].path))
 
                 data_fuel, total, initial_date, final_date = utils_read_file(str(e.files[0].path))
+                data_fuel.to_json('data/data_fuel.json')
 
-                #--> Updating TextFields information:
+
+                # --> Updating TextFields information:
                 name_file_field.value = e.files[0].name
                 total_value_field.value = total.replace('.', ',')
                 initial_date_field.value = initial_date
@@ -161,10 +165,12 @@ class Dashboard(UserControl):
                 qtd_lines.value = str(len(data_fuel.index))
                 file_data_upload.update()
 
-                #--> Updating INITIAL CARDS information:
+                # --> Updating INITIAL CARDS information:
                 fuel_total_text.value = number_formatter(total)
-                budget_text.value = number_formatter(format(float(budget_value)-float(total), '.2f'))
+                budget_text.value = number_formatter(format(float(budget_value) - float(total), '.2f'))
                 initial_cards_row.update()
+
+                card_data_table.update()
 
         card_file = ft.Card(
             content=ft.Column(
@@ -188,70 +194,68 @@ class Dashboard(UserControl):
             )
         )
 
-        def data_table():
+        #def data_table(dataframe):
+        data_fuel_df = pd.read_json('data/data_fuel.json')
 
-            record_feedback = ft.DataTable(
-                columns=[
-                    ft.DataColumn(ft.Text("Etapa:")),
-                    ft.DataColumn(ft.Text("Avaliação:")),
-                    ft.DataColumn(ft.Text("Série:")),
-                    ft.DataColumn(ft.Text("Disciplinas:")),
-                    ft.DataColumn(ft.Text("Colunas:")),
-                    ft.DataColumn(ft.Text("Turno:")),
-                    ft.DataColumn(ft.Text("Ano:")),
-                ],
-                key="feedback",
-            )
+        table_data_input.columns = return_headers(data_fuel_df)
+        table_data_input.rows = return_rows(data_fuel_df)
+        #table_data_input.height = 200
+        table_data_input.expand = True
 
-            card_data_table = ft.Card(
-                content=ft.Column(
-                    controls=[
-                        ft.Container(
-                            ft.ListTile(
-                                title=ft.Text(f"Envie a Planilha Mensal de Abastecimentos",
-                                              style=ft.TextThemeStyle.HEADLINE_SMALL,
-                                              text_align=ft.TextAlign.CENTER),
-                                subtitle=ft.Text(
-                                    "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão automaticamente preenchidos.",
-                                    text_align=ft.TextAlign.CENTER,
-                                    style=ft.TextThemeStyle.BODY_SMALL)
-                            ), padding=ft.padding.only(10, 5, 10, 0)
-                        ),
-                        ft.Container(
-                            content=record_feedback,
-                            padding=ft.padding.only(10, 0, 10, 5),
-                            alignment=ft.alignment.center
-                        ),
-                    ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
-                )
-            )
+        table_data_input_listview = ft.ListView(expand=1,spacing=1, padding=10, height=200)
+        table_data_input_listview.controls.append(table_data_input)
+        print(list(table_data_input.columns))
 
-            return card_data_table
-
-        if self.page.session.get("uploaded_file"):
-
-            data_fuel_df, total_value, first_date, last_date = utils_read_file(self.page.session.get("uploaded_file"))
-
-            fuel_total_card = create_cards(fuel_total_text, "Total Gasto", "positive")
-            irregular_card = create_cards(irregular_text, "Total Irregular", "negative")
-            budget_card = create_cards(budget_text, "Saldo", "neutral")
-
-            initial_cards_row.controls.clear()
-            initial_cards_row.controls.append(fuel_total_card, irregular_card, budget_card)
-
-        else:
-
-            fuel_total_card = create_cards(fuel_total_text, "Total Gasto", "positive")
-            irregular_card = create_cards(irregular_text, "Total Irregular", "negative")
-            budget_card = create_cards(budget_text, "Saldo", "neutral")
-
-            initial_cards_row = ft.ResponsiveRow(
+        card_data_table = ft.Card(
+            content=ft.Column(
                 controls=[
-                    fuel_total_card,
-                    irregular_card,
-                    budget_card
-                ]
+                    ft.Container(
+                        ft.ListTile(
+                            title=ft.Text(f"Envie a Planilha Mensal de Abastecimentos",
+                                          style=ft.TextThemeStyle.HEADLINE_SMALL,
+                                          text_align=ft.TextAlign.CENTER),
+                            subtitle=ft.Text(
+                                "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão automaticamente preenchidos.",
+                                text_align=ft.TextAlign.CENTER,
+                                style=ft.TextThemeStyle.BODY_SMALL)
+                        ), padding=ft.padding.only(10, 5, 10, 0)
+                    ),
+                    ft.Container(
+                        content=table_data_input_listview,
+                        padding=ft.padding.only(10, 0, 10, 5),
+                        alignment=ft.alignment.center,
+                    ),
+
+                ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
             )
+        )
+
+            #return card_data_table
+
+        # if self.page.session.get("uploaded_file"):
+        #
+        #     data_fuel_df, total_value, first_date, last_date = utils_read_file(self.page.session.get("uploaded_file"))
+        #
+        #     fuel_total_card = create_cards(fuel_total_text, "Total Gasto", "positive")
+        #     irregular_card = create_cards(irregular_text, "Total Irregular", "negative")
+        #     budget_card = create_cards(budget_text, "Saldo", "neutral")
+        #
+        #     initial_cards_row.controls.clear()
+        #     initial_cards_row.controls.append(fuel_total_card, irregular_card, budget_card)
+
+
+
+        fuel_total_card = create_cards(fuel_total_text, "Total Gasto", "positive")
+        irregular_card = create_cards(irregular_text, "Total Irregular", "negative")
+        budget_card = create_cards(budget_text, "Saldo", "neutral")
+
+        initial_cards_row = ft.ResponsiveRow(
+            controls=[
+                fuel_total_card,
+                irregular_card,
+                budget_card
+            ]
+        )
 
         # Statements for File Picker:
         PickFile = FilePicker(on_result=file_upload)
@@ -261,7 +265,7 @@ class Dashboard(UserControl):
             ft.Column([
                 initial_cards_row,
                 card_file,
-                data_table()
+                card_data_table
             ])
 
         ]
