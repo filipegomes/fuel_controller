@@ -57,7 +57,7 @@ def read_grades(file_name):
     return grades, grades_courses
 
 
-def utils_read_file(file_name):
+def utils_read_file(file_name, df_cropped=False):
     data_fuel = pd.read_csv(file_name, sep=";", decimal=',', parse_dates=True, header=1,
                             index_col=0)  # O arquivo de entrada precisa estar com as casas decimais delimitadas por vírgula.
     data_fuel.drop([
@@ -103,6 +103,8 @@ def utils_read_file(file_name):
     }, inplace=True)
     data_fuel['car_register_number'] = data_fuel['car_register_number'].str.replace('-', '')
 
+
+
     total_value = format(data_fuel['trans_fuel_total'].sum(), '.2f')
 
     first_date = data_fuel['datetime'].min().date()
@@ -111,7 +113,33 @@ def utils_read_file(file_name):
     last_date = data_fuel['datetime'].max().date()
     last_date = f"{last_date.day} / {last_date.month} / {last_date.year}"
 
-    return data_fuel, total_value, first_date, last_date
+    if df_cropped:
+        data_fuel_cropped = data_fuel.copy()
+        data_fuel_cropped.drop(
+            [
+                'card_number',
+                'location_name',
+                'location_city',
+                'location_UF',
+                'cod_cnpj',
+                'trans_type'
+            ],
+            axis="columns",
+            inplace=True
+        )
+        data_fuel_cropped.rename(columns={
+            'datetime': 'Data',
+            'car_register_number': 'Placa',
+            'car_year_model': 'Ano',
+            'trans_fuel_type': 'Combustível',
+            'driver_name': 'Condutor',
+            'trans_fuel_qtd': 'Qtd/Litros',
+            'trans_fuel_price': 'Preço/Litro',
+            'trans_fuel_total': 'Valor Total',
+        }, inplace=True)
+        return data_fuel_cropped
+    else:
+        return data_fuel, total_value, first_date, last_date
 
 
 def return_headers(df: pd.DataFrame) -> list:

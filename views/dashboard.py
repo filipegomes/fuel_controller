@@ -25,11 +25,14 @@ class Dashboard(UserControl):
 
     def build(self):
 
+        # -------> MAIN COLUMN <--------- #
+        main_column = ft.Column()
+
         # --------> VARIABLES *INITIAL CARDS* ROW <---------#
         initial_cards_row = ft.ResponsiveRow()
         budget_value = 76600  # put that on settings
-        fuel_total_text = ft.Text()
-        irregular_text = ft.Text()
+        fuel_total_text = ft.Text("Envie o arquivo.")
+        irregular_text = ft.Text("Envie o arquivo.")
         budget_text = ft.Text(number_formatter(format(budget_value, '.2f')))
 
         # --------> VARIABLES *SEND_FILE* ROW <---------#
@@ -155,6 +158,8 @@ class Dashboard(UserControl):
                 data_fuel, total, initial_date, final_date = utils_read_file(str(e.files[0].path))
                 data_fuel.to_json('data/data_fuel.json')
 
+                data_fuel_cropped = utils_read_file(str(e.files[0].path), True)
+                data_fuel_cropped.to_json('data/data_fuel_cropped.json')
 
                 # --> Updating TextFields information:
                 name_file_field.value = e.files[0].name
@@ -170,7 +175,13 @@ class Dashboard(UserControl):
                 budget_text.value = number_formatter(format(float(budget_value) - float(total), '.2f'))
                 initial_cards_row.update()
 
-                card_data_table.update()
+                card_data_table = data_table(data_fuel_cropped)
+                if len(main_column.controls) > 2:
+                    main_column.controls.pop(2)
+                    main_column.controls[2] = card_data_table
+                else:
+                    main_column.controls.append(card_data_table)
+                main_column.update()
 
         card_file = ft.Card(
             content=ft.Column(
@@ -194,56 +205,43 @@ class Dashboard(UserControl):
             )
         )
 
-        #def data_table(dataframe):
-        data_fuel_df = pd.read_json('data/data_fuel.json')
+        def data_table(dataframe):
+            data_fuel_df = pd.read_json('data/data_fuel.json')
+            data_fuel_cropped = pd.read_json('data/data_fuel_cropped.json')
 
-        table_data_input.columns = return_headers(data_fuel_df)
-        table_data_input.rows = return_rows(data_fuel_df)
-        #table_data_input.height = 200
-        table_data_input.expand = True
+            table_data_input.columns = return_headers(data_fuel_cropped)
+            table_data_input.rows = return_rows(data_fuel_cropped)
+            table_data_input.expand = True
 
-        table_data_input_listview = ft.ListView(expand=1,spacing=1, padding=10, height=200)
-        table_data_input_listview.controls.append(table_data_input)
-        print(list(table_data_input.columns))
+            table_data_input_listview = ft.ListView(expand=1, spacing=1, padding=10, height=200)
+            table_data_input_listview.controls.append(table_data_input)
+            print(list(table_data_input.columns))
 
-        card_data_table = ft.Card(
-            content=ft.Column(
-                controls=[
-                    ft.Container(
-                        ft.ListTile(
-                            title=ft.Text(f"Envie a Planilha Mensal de Abastecimentos",
-                                          style=ft.TextThemeStyle.HEADLINE_SMALL,
-                                          text_align=ft.TextAlign.CENTER),
-                            subtitle=ft.Text(
-                                "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão automaticamente preenchidos.",
-                                text_align=ft.TextAlign.CENTER,
-                                style=ft.TextThemeStyle.BODY_SMALL)
-                        ), padding=ft.padding.only(10, 5, 10, 0)
-                    ),
-                    ft.Container(
-                        content=table_data_input_listview,
-                        padding=ft.padding.only(10, 0, 10, 5),
-                        alignment=ft.alignment.center,
-                    ),
+            card_data_table = ft.Card(
+                content=ft.Column(
+                    controls=[
+                        ft.Container(
+                            ft.ListTile(
+                                title=ft.Text(f"Envie a Planilha Mensal de Abastecimentos",
+                                              style=ft.TextThemeStyle.HEADLINE_SMALL,
+                                              text_align=ft.TextAlign.CENTER),
+                                subtitle=ft.Text(
+                                    "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão automaticamente preenchidos.",
+                                    text_align=ft.TextAlign.CENTER,
+                                    style=ft.TextThemeStyle.BODY_SMALL)
+                            ), padding=ft.padding.only(10, 5, 10, 0)
+                        ),
+                        ft.Container(
+                            content=table_data_input_listview,
+                            padding=ft.padding.only(10, 0, 10, 5),
+                            alignment=ft.alignment.center,
+                        ),
 
-                ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
+                    ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
+                )
             )
-        )
 
-            #return card_data_table
-
-        # if self.page.session.get("uploaded_file"):
-        #
-        #     data_fuel_df, total_value, first_date, last_date = utils_read_file(self.page.session.get("uploaded_file"))
-        #
-        #     fuel_total_card = create_cards(fuel_total_text, "Total Gasto", "positive")
-        #     irregular_card = create_cards(irregular_text, "Total Irregular", "negative")
-        #     budget_card = create_cards(budget_text, "Saldo", "neutral")
-        #
-        #     initial_cards_row.controls.clear()
-        #     initial_cards_row.controls.append(fuel_total_card, irregular_card, budget_card)
-
-
+            return card_data_table
 
         fuel_total_card = create_cards(fuel_total_text, "Total Gasto", "positive")
         irregular_card = create_cards(irregular_text, "Total Irregular", "negative")
@@ -261,12 +259,12 @@ class Dashboard(UserControl):
         PickFile = FilePicker(on_result=file_upload)
         self.page.overlay.append(PickFile)
 
-        self.content = [
-            ft.Column([
-                initial_cards_row,
-                card_file,
-                card_data_table
-            ])
+        main_column.controls = [
+            initial_cards_row,
+            card_file,
+        ]
 
+        self.content = [
+            main_column
         ]
         return self.content
