@@ -3,8 +3,13 @@ import flet as ft
 from views.dashboard import Dashboard
 from user_controls.nav_controls import nav_bar_handler, nav_drawer_handler
 from user_controls.nav_router import Router
+from auth import *
+
+
 
 def main(page: Page):
+
+
     page.title = "Fuel Control CMJG"
     page.padding = 10
     page.scroll = ft.ScrollMode.ADAPTIVE
@@ -52,5 +57,5 @@ def main(page: Page):
     )
 
 
-#app(target=main, assets_dir='assets', view=WEB_BROWSER, port=8550)
+#app(target=main, assets_dir='assets', upload_dir='assets/uploads', view=WEB_BROWSER, port=8550)
 app(target=main, assets_dir='assets')
