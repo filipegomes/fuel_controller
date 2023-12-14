@@ -1,6 +1,7 @@
 from flet import *
 import flet as ft
 from views.dashboard import Dashboard
+from views.base_data_view import BaseDataView
 from user_controls.nav_controls import nav_bar_handler, nav_drawer_handler
 from user_controls.nav_router import Router
 from auth import *
@@ -24,6 +25,7 @@ def main(page: Page):
             # ...
         ),
     )
+
     if page.client_storage.contains_key("tema") is False:
         page.client_storage.set("tema", "light")
     else:
@@ -40,15 +42,18 @@ def main(page: Page):
     page.margin = margin.all(15)
     page.navigation_bar = nav_bar_handler(page)
     page.drawer = nav_drawer_handler(page)
-    myRouter = Router(page)
-    page.on_route_change = myRouter.route_change
+    my_router = Router(page)
+    page.on_route_change = my_router.route_change
+
+
+
     page.update()
 
     page.add(
         ft.Column(controls=[
             ft.Column(
                 controls=[
-                    myRouter.body,
+                    my_router.body,
                 ],
                 expand=True,
             )

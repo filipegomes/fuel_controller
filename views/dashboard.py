@@ -15,22 +15,19 @@ from flet import (
 import flet as ft
 from flet_core import FilePicker, FilePickerResultEvent
 from user_controls.utils import *
-# from auth import SUPABASE_URL,SUPABASE_KEY
-# from supabase import create_client, Client
 from auth import supabase
+from user_controls.interface_utils import *
 
 
-class Dashboard(UserControl):
+class Dashboard(ft.UserControl):
     def __init__(self, page: Page):
         super().__init__()
-        self.content = None
         self.page = page
 
     def build(self):
-        # url: str = SUPABASE_URL
-        # key: str = SUPABASE_KEY
-        # supabase: Client = create_client(url, key)
+
         response = supabase.table('data_cars').select("*").execute()
+
         # -------> MAIN COLUMN <--------- #
         main_column = ft.Column()
 
@@ -78,79 +75,6 @@ class Dashboard(UserControl):
         table_data_output = ft.DataTable()
 
         # ---------> FUNCTIONS:
-
-        def create_cards(value_text, title, type_card):
-            """
-            :param value_text: um objeto ft.Text() com o valor a ser impresso.
-            :param title: título do card.
-            :param type_card: tipo do card (positive[verde], negative[vermelho], neutral[cor padrão])
-            :return: um card pronto com as informações e cores informadas.
-            """
-
-            if type_card == "positive":
-                card_type = {
-                    'icon': ft.icons.ATTACH_MONEY_ROUNDED,
-                    'color': ft.colors.GREEN,
-                    'bgcolor': ft.colors.GREEN_200
-                }
-            elif type_card == "negative":
-                card_type = {
-                    'icon': ft.icons.MONEY_OFF_ROUNDED,
-                    'color': ft.colors.RED,
-                    'bgcolor': ft.colors.RED_200
-                }
-            else:
-                card_type = {
-                    'icon': ft.icons.WALLET_ROUNDED,
-                    'color': ft.colors.ON_PRIMARY,
-                    'bgcolor': ft.colors.PRIMARY
-                }
-
-            value_text.style = ft.TextThemeStyle.DISPLAY_SMALL
-            value_text.text_align = ft.TextAlign.START
-            value_text.color = card_type['bgcolor']
-
-            card = ft.Card(
-                content=ft.Container(
-                    content=ft.ResponsiveRow(
-                        [
-                            ft.Column(
-                                controls=[
-                                    ft.Container(
-                                        content=Icon(card_type['icon'], color=card_type['color'], size=48),
-                                        bgcolor=card_type['bgcolor'],
-                                        alignment=ft.alignment.center,
-                                        shape=ft.BoxShape.CIRCLE,
-                                    ),
-                                    ft.Text(
-                                        value=f"{title.upper()}",
-                                        style=ft.TextThemeStyle.TITLE_SMALL,
-                                        color=card_type['bgcolor']
-                                    ),
-                                ],
-                                col=4,
-                                alignment=ft.MainAxisAlignment.CENTER,
-                                horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                            ),
-
-                            ft.Column(
-                                controls=[
-                                    ft.ListTile(
-                                        title=value_text,
-                                    )
-                                ],
-                                alignment=ft.MainAxisAlignment.CENTER, col=8)
-                        ],
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.SPACE_EVENLY
-                    ),
-                    width=400,
-                    padding=10,
-                ),
-                col=4,
-                surface_tint_color=card_type['bgcolor'], elevation=5.0
-            )
-            return card
-
         def file_upload(e: FilePickerResultEvent):
             """
             :param e: FilePickerResultEvent
@@ -202,28 +126,6 @@ class Dashboard(UserControl):
 
 
 
-        card_file = ft.Card(
-            content=ft.Column(
-                controls=[
-                    ft.Container(
-                        ft.ListTile(
-                            title=ft.Text(f"Envie a Planilha Mensal de Abastecimentos",
-                                          style=ft.TextThemeStyle.HEADLINE_SMALL,
-                                          text_align=ft.TextAlign.CENTER),
-                            subtitle=ft.Text(
-                                "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão automaticamente preenchidos.",
-                                text_align=ft.TextAlign.CENTER,
-                                style=ft.TextThemeStyle.BODY_SMALL)
-                        ),
-                    ),
-                    ft.Container(
-                        content=file_data_upload,
-                        padding=ft.padding.only(10, 0, 10, 10),
-                    ),
-                ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
-            )
-        )
-
         def data_table(dataframe):
             data_fuel_df = pd.read_json('data/data_fuel.json')
             data_fuel_cropped = pd.read_json('data/data_fuel_cropped.json')
@@ -262,7 +164,6 @@ class Dashboard(UserControl):
 
             return card_data_table
 
-
         def verify_irregular():
 
             data_cars = pd.read_json('data/data_cars.json')
@@ -286,7 +187,8 @@ class Dashboard(UserControl):
                                               style=ft.TextThemeStyle.HEADLINE_SMALL,
                                               text_align=ft.TextAlign.CENTER),
                                 subtitle=ft.Text(
-                                    "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão automaticamente preenchidos.",
+                                    "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão "
+                                    "automaticamente preenchidos.",
                                     text_align=ft.TextAlign.CENTER,
                                     style=ft.TextThemeStyle.BODY_SMALL)
                             ), padding=ft.padding.only(10, 5, 10, 0)
@@ -303,9 +205,9 @@ class Dashboard(UserControl):
 
             return card_output_table
 
-        fuel_total_card = create_cards(fuel_total_text, "Total Gasto", "positive")
-        irregular_card = create_cards(irregular_text, "Total Irregular", "negative")
-        budget_card = create_cards(budget_text, "Saldo", "neutral")
+        fuel_total_card = create_initial_cards(fuel_total_text, "Total Gasto", "positive")
+        irregular_card = create_initial_cards(irregular_text, "Total Irregular", "negative")
+        budget_card = create_initial_cards(budget_text, "Saldo", "neutral")
 
         initial_cards_row = ft.ResponsiveRow(
             controls=[
@@ -314,17 +216,40 @@ class Dashboard(UserControl):
                 budget_card
             ]
         )
+        card_file = ft.Card(
+            content=ft.Column(
+                controls=[
+                    ft.Container(
+                        ft.ListTile(
+                            title=ft.Text(f"Envie a Planilha Mensal de Abastecimentos",
+                                          style=ft.TextThemeStyle.HEADLINE_SMALL,
+                                          text_align=ft.TextAlign.CENTER),
+                            subtitle=ft.Text(
+                                "Envie a planilha mensal de abastecimentos em formato CSV. Os campos abaixo serão automaticamente preenchidos.",
+                                text_align=ft.TextAlign.CENTER,
+                                style=ft.TextThemeStyle.BODY_SMALL)
+                        ),
+                    ),
+                    ft.Container(
+                        content=file_data_upload,
+                        padding=ft.padding.only(10, 0, 10, 10),
+                    ),
+                ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
+            )
+        )
 
         # Statements for File Picker:
         pick_file = FilePicker(on_result=file_upload)
         self.page.overlay.append(pick_file)
+
+
 
         main_column.controls = [
             initial_cards_row,
             card_file,
         ]
 
-        self.content = [
+        content = [
             main_column
         ]
-        return self.content
+        return content

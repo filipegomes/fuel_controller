@@ -13,27 +13,36 @@ from flet import (
 
 )
 import flet as ft
-from flet_core import FilePicker, FilePickerResultEvent
 from user_controls.utils import *
-# from auth import SUPABASE_URL,SUPABASE_KEY
-# from supabase import create_client, Client
 from auth import supabase
+from user_controls.interface_utils import *
 
 
 class BaseDataView(UserControl):
     def __init__(self, page: Page):
         super().__init__()
-        self.content = None
         self.page = page
 
     def build(self):
         main_column = ft.Column()
 
-        main_column.controls = [
+        initial_cards_row = ft.ResponsiveRow()
+        active_cars_text = ft.Text("Envie o arquivo.")
+        inactive_cars_text = ft.Text("Envie o arquivo.")
 
+        active_cars_card = create_initial_cards(active_cars_text, "Carros Ativos", "positive")
+        inactive_cars_card = create_initial_cards(inactive_cars_text, "Carros Inativos", "negative")
+
+        initial_cards_row.controls = [
+            active_cars_card,
+            inactive_cars_card
         ]
 
-        self.content = [
+        main_column.controls = [
+            initial_cards_row
+        ]
+
+        content = [
             main_column
         ]
-        return self.content
+        return content

@@ -18,6 +18,8 @@ def nav_bar_handler(page: Page):
         page.drawer.open = True
         page.drawer.update()
 
+
+
     nav_bar = ft.AppBar(
         leading=ft.IconButton(icon=ft.icons.MENU, on_click=show_drawer),
         leading_width=40,
@@ -29,10 +31,10 @@ def nav_bar_handler(page: Page):
             ft.IconButton(ft.icons.FILTER_3),
             ft.PopupMenuButton(
                 items=[
-                    ft.PopupMenuItem(text="Item 1"),
+                    ft.PopupMenuItem(text="Item 1", on_click=lambda _: page.go('/')),
                     ft.PopupMenuItem(),  # divider
                     ft.PopupMenuItem(
-                        text="Checked item", checked=False
+                        text="Checked item", on_click=lambda _: page.go('/dados')
                     ),
                 ]
             ),
@@ -42,19 +44,30 @@ def nav_bar_handler(page: Page):
 
 
 def nav_drawer_handler(page: Page):
+    def change_page(e):
+        if nav_drawer.selected_index == 0:
+            page.route = '/'
+            page.update()
+        elif nav_drawer.selected_index == 1:
+            page.route = "/dados"
+            page.update()
+        print(nav_drawer.selected_index)
+
     nav_drawer = ft.NavigationDrawer(
+        on_change=change_page,
         controls=[
-            ft.Container(height=12),
+            #ft.Container(height=12),
             ft.NavigationDrawerDestination(
-                label="Item 1",
+                label="Página Inicial",
                 icon=ft.icons.DOOR_BACK_DOOR_OUTLINED,
                 selected_icon_content=ft.Icon(ft.icons.DOOR_BACK_DOOR),
             ),
             ft.Divider(thickness=2),
             ft.NavigationDrawerDestination(
                 icon_content=ft.Icon(ft.icons.MAIL_OUTLINED),
-                label="Item 2",
+                label="Dados dos Carros",
                 selected_icon=ft.icons.MAIL,
+
             ),
             ft.NavigationDrawerDestination(
                 icon_content=ft.Icon(ft.icons.PHONE_OUTLINED),
